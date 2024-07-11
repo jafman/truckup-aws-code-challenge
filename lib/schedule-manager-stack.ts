@@ -35,17 +35,31 @@ export class ScheduleManagerStack extends Stack {
       runtime: this.lambdaRuntime,
       code: lambda.Code.fromAsset('lambda'),
       handler: 'shedule-manager.getUserSchedule',
-      timeout: Duration.minutes(1),
+      timeout: Duration.minutes(3),
       environment,
     })
 
-    
+    const updateSchedule = new lambda.Function(this, 'UpdateUserScheduleHandler', {
+      runtime: this.lambdaRuntime,
+      code: lambda.Code.fromAsset('lambda'),
+      handler: 'shedule-manager.updateSchedule',
+      timeout: Duration.minutes(3),
+      environment,
+    })
+
+    const deleteSchedule = new lambda.Function(this, 'DeleteUserScheduleHandler', {
+      runtime: this.lambdaRuntime,
+      code: lambda.Code.fromAsset('lambda'),
+      handler: 'shedule-manager.deleteSchedule',
+      timeout: Duration.minutes(3),
+      environment,
+    })
 
     const createUserSchedule = new lambda.Function(this, 'CreateUserScheduleHandler', {
       runtime: this.lambdaRuntime,
       code: lambda.Code.fromAsset('lambda'),
       handler: 'shedule-manager.createSchedule',
-      timeout: Duration.minutes(1),
+      timeout: Duration.minutes(3),
       environment,
     })
 
@@ -53,20 +67,22 @@ export class ScheduleManagerStack extends Stack {
       runtime: this.lambdaRuntime,
       code: lambda.Code.fromAsset('lambda'),
       handler: 'shedule-manager.defaultHandler',
-      timeout: Duration.minutes(1),
+      timeout: Duration.minutes(3),
     })
 
     const databaseSeed = new lambda.Function(this, 'DBSeeder', {
       runtime: this.lambdaRuntime,
       code: lambda.Code.fromAsset('lambda'),
       handler: 'db.seed',
-      timeout: Duration.minutes(1),
+      timeout: Duration.minutes(3),
       environment,
     })
 
     auroraPostgres.grantDataAPIAccess(createUserSchedule);
     auroraPostgres.grantDataAPIAccess(databaseSeed);
     auroraPostgres.grantDataAPIAccess(getUserSchedule);
+    auroraPostgres.grantDataAPIAccess(updateSchedule);
+    auroraPostgres.grantDataAPIAccess(deleteSchedule);
 
     const apiGateway = new apigw.LambdaRestApi(this, 'Endpoint', {
       handler: defaultHandler,
@@ -83,6 +99,8 @@ export class ScheduleManagerStack extends Stack {
     seed.addMethod('GET', new apigw.LambdaIntegration(databaseSeed));
 
     user.addMethod('POST', new apigw.LambdaIntegration(createUserSchedule));
+    user.addMethod('PATCH', new apigw.LambdaIntegration(updateSchedule));
+    user.addMethod('DELETE', new apigw.LambdaIntegration(deleteSchedule));
 
   }
 }
