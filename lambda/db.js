@@ -128,3 +128,67 @@ exports.getScheduleByDay = async function (userId, day) {
     throw error;
   }
 }
+
+exports.getScheduleById = async function (userId, id) {
+  const sql = `
+    SELECT * FROM schedule 
+    WHERE id = '${id}'
+    AND user_id = '${userId}';
+  `
+  try {
+    const data = await RDS.executeStatement({...params, sql}).promise();
+    const itemCount = data?.records?.length;
+    
+    let schedule = null;
+
+    if (itemCount && itemCount > 0) {
+      
+      for (const item of data.records) {
+        const [ 
+          { longValue: id },
+          { stringValue: user_id },
+          { stringValue: day },
+          { stringValue: start_time },
+          { stringValue: end_time }
+        ] = item;
+
+        schedule = {id, start_time, end_time, day};
+      }
+      
+    }
+
+    return schedule;
+  } catch (error) {
+    console.log(error)
+    throw error;
+  }
+}
+
+exports.updateSchedule = async function (start_time, end_time, id) {
+  const sql = `
+    UPDATE schedule
+    SET start_time = '${start_time}',
+    end_time = '${end_time}'
+    WHERE id = '${id}';
+  `
+  try {
+    await RDS.executeStatement({...params, sql}).promise();
+  } catch (error) {
+    console.log(error)
+    throw error;
+  }
+}
+
+exports.deleteSchedule = async function (userId, id) {
+  const sql = `
+    DELETE FROM schedule
+    WHERE id = '${id}'
+    AND user_id = '${userId}';
+  `
+  try {
+    await RDS.executeStatement({...params, sql}).promise();
+  } catch (error) {
+    console.log(error)
+    throw error;
+  }
+}
