@@ -54,6 +54,33 @@ class Helper {
     //   (newEndMinutes > scheduledStartMinutes && newEndMinutes < scheduledEndMinutes);
     return (newStartMinutes < scheduledEndMinutes && newEndMinutes > scheduledStartMinutes);
   }
+
+  static validateTimeFormatAndRange(body) {
+    if (!this.validateTime(body.start_time)) {
+      return {
+        isValid: false,
+        message: 'Invalid time format for start time, example of time stamp: 12:01 PM, 01:00 AM etc'
+      }
+    }
+  
+    if (!this.validateTime(body.end_time)) {
+      return {
+        isValid: false,
+        message: 'Invalid time format for end time, example of time stamp: 12:01 PM, 01:00 AM etc'
+      }
+    }
+    
+    if(!this.validateTimeRange(body.start_time, body.end_time)) {
+      return {
+        isValid: false,
+        message: 'Invalid date range, start_time should be less than end_time'
+      }
+    }
+    return {
+      isValid: true,
+      message: ''
+    }
+  }
 }
 
 exports.Helper = Helper;
