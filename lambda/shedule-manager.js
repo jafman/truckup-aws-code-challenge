@@ -1,3 +1,6 @@
+const SDK = require('aws-sdk');
+const RDS = new SDK.RDSDataService();
+
 exports.getUserSchedule = async function (event) {
   console.log("request:", );
   return {
