@@ -1,7 +1,8 @@
 const { Helper } = require('./helper');
-const { createSchedule, getSchedules } = require('./db');
+const { createSchedule, getSchedules, getScheduleByDay } = require('./db');
 
 const userId = '2e2d69d4-b11f-4162-9aaf-dece541bccd7';
+const userTimeZone = 'America/New_York';
 
 exports.getUserSchedule = async function (event) {
   return await getSchedules(userId);
@@ -24,8 +25,7 @@ exports.createSchedule = async function (event) {
   } catch (error) {
     return Helper.badRequestError('Invalid JSON');
   }
-  // TODO: Validate time zone, and convert to UTC
-  // TODO: Validate day
+
   // Validate the presence of required properties
   if (!body.day || !body.start_time || !body.end_time) {
     return Helper.badRequestError('Missing required properties');
@@ -36,8 +36,14 @@ exports.createSchedule = async function (event) {
     return Helper.badRequestError('Invalid property types');
   }
 
+  // TODO: Validate day
+  if (!Helper.validateDay(body.day)) {
+    return Helper.badRequestError('Invalid day format, example of day is monday, tuesday etc');
+  }
+
   body.start_time = body.start_time.toUpperCase();
   body.end_time = body.end_time.toUpperCase();
+  body.day = body.day.toLowerCase();
   
   if (!Helper.validateTime(body.start_time)) {
     return Helper.badRequestError('Invalid time format for start time, example of time stamp: 12:01 PM, 01:00 AM etc');
@@ -51,11 +57,24 @@ exports.createSchedule = async function (event) {
     return Helper.badRequestError('Invalid date range, start_time should be less than end_time');
   }
 
+  // check for overlap
+  let overlapFound = false;
+  let overlap = {};
+  const existingSchedules = await getScheduleByDay(userId, body.day);
+  console.log('Got here')
+  for (let i = 0; i <  existingSchedules.length; i++ ) {
+    console.log('And here:', i+1);
+    if (Helper.checkForOverLap({ start_time: body.start_time, end_time: body.end_time }, existingSchedules[i])) {
+      overlapFound = true;
+      overlap = existingSchedules[i];
+      break;
+    }
+  }
+  console.log('Made it here')
+  if (overlapFound) {
+    return Helper.badRequestError(`Invalid time range, an overlap exist: from ${overlap.start_time} to ${overlap.end_time}`);
+  }
   return await createSchedule(userId, body);
 
-  // return {
-  //   statusCode: 200,
-  //   body: JSON.stringify(body),
-  // }
 }
 

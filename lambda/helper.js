@@ -11,6 +11,10 @@ class Helper {
     return true;
   }
 
+  static validateDay(dayStr) {
+    return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].includes(dayStr.toLowerCase());
+  }
+
   static timeToMinutes(time) {
     var tokens = time.split(' ');
     var timeTokens = tokens[0].split(':');
@@ -37,6 +41,18 @@ class Helper {
       statusCode: 400,
       body: JSON.stringify({ error: message })
     };
+  }
+
+  static checkForOverLap(newSchedule, existingSchedule) {
+    const newStartMinutes = this.timeToMinutes(newSchedule.start_time);
+    const newEndMinutes = this.timeToMinutes(newSchedule.end_time);
+
+    const scheduledStartMinutes = this.timeToMinutes(existingSchedule.start_time);
+    const scheduledEndMinutes = this.timeToMinutes(existingSchedule.end_time);
+
+    // return (newStartMinutes > scheduledStartMinutes && newStartMinutes < scheduledEndMinutes) || 
+    //   (newEndMinutes > scheduledStartMinutes && newEndMinutes < scheduledEndMinutes);
+    return (newStartMinutes < scheduledEndMinutes && newEndMinutes > scheduledStartMinutes);
   }
 }
 
