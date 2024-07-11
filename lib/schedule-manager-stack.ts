@@ -29,13 +29,26 @@ export class ScheduleManagerStack extends Stack {
       handler: 'shedule-manager.getUserSchedule',
     })
 
+    const auroraPostgres = new Database(this, 'AuororaPostgres', {})
+
+    const createUserSchedule = new lambda.Function(this, 'CreateUserScheduleHandler', {
+      runtime: this.lambdaRuntime,
+      code: lambda.Code.fromAsset('lambda'),
+      handler: 'shedule-manager.createSchedule',
+      timeout: Duration.minutes(1),
+      environment: {
+        DB_SECRETS_STORE_ARN: auroraPostgres.secretArn,
+        DB_AURORA_CLUSTER_ARN: auroraPostgres.clusterArn,
+        DATABASE_NAME: auroraPostgres.databaseName,
+      }
+    })
+
     const defaultHandler = new lambda.Function(this, 'DefaultHandler', {
       runtime: this.lambdaRuntime,
       code: lambda.Code.fromAsset('lambda'),
       handler: 'shedule-manager.defaultHandler',
+      timeout: Duration.minutes(1),
     })
-
-    const auroraPostgres = new Database(this, 'AuororaPostgres', {})
 
     const databaseSeed = new lambda.Function(this, 'DBSeeder', {
       runtime: this.lambdaRuntime,
@@ -49,6 +62,7 @@ export class ScheduleManagerStack extends Stack {
       }
     })
 
+    auroraPostgres.grantDataAPIAccess(createUserSchedule);
     auroraPostgres.grantDataAPIAccess(databaseSeed);
 
     const apiGateway = new apigw.LambdaRestApi(this, 'Endpoint', {
@@ -64,6 +78,8 @@ export class ScheduleManagerStack extends Stack {
 
     const seed = apiGateway.root.addResource('seed');
     seed.addMethod('GET', new apigw.LambdaIntegration(databaseSeed));
+
+    user.addMethod('POST', new apigw.LambdaIntegration(createUserSchedule));
 
   }
 }
