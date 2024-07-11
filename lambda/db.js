@@ -53,3 +53,43 @@ exports.createSchedule = async function (userId, schedule) {
     return error
   }
 }
+
+exports.getSchedules = async function (userId) {
+  const sql = `
+    SELECT * FROM schedule 
+    WHERE user_id = '${userId}';
+  `
+  try {
+    const data = await RDS.executeStatement({...params, sql}).promise();
+    const itemCount = data?.records?.length;
+    
+    let schedule = {};
+
+    if (itemCount && itemCount > 0) {
+      
+      for (const item of data.records) {
+        const [ 
+          { longValue: id },
+          { stringValue: user_id },
+          { stringValue: day },
+          { stringValue: start_time },
+          { stringValue: end_time }
+        ] = item;
+
+        if (!(day in schedule)) {
+          schedule[day] = [];
+        } 
+        schedule[day].push({id, start_time, end_time});
+      }
+      
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ userId, schedule }),
+    }
+  } catch (error) {
+      console.log(error)
+    return error
+  }
+}

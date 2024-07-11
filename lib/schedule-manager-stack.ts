@@ -23,24 +23,30 @@ export class ScheduleManagerStack extends Stack {
     // const topic = new sns.Topic(this, 'ScheduleManagerTopic');
 
     // topic.addSubscription(new subs.SqsSubscription(queue));
+    const auroraPostgres = new Database(this, 'AuororaPostgres', {})
+
+    const environment = {
+      DB_SECRETS_STORE_ARN: auroraPostgres.secretArn,
+      DB_AURORA_CLUSTER_ARN: auroraPostgres.clusterArn,
+      DATABASE_NAME: auroraPostgres.databaseName,
+    }
+
     const getUserSchedule = new lambda.Function(this, 'GetUserScheduleHandler', {
       runtime: this.lambdaRuntime,
       code: lambda.Code.fromAsset('lambda'),
       handler: 'shedule-manager.getUserSchedule',
+      timeout: Duration.minutes(1),
+      environment,
     })
 
-    const auroraPostgres = new Database(this, 'AuororaPostgres', {})
+    
 
     const createUserSchedule = new lambda.Function(this, 'CreateUserScheduleHandler', {
       runtime: this.lambdaRuntime,
       code: lambda.Code.fromAsset('lambda'),
       handler: 'shedule-manager.createSchedule',
       timeout: Duration.minutes(1),
-      environment: {
-        DB_SECRETS_STORE_ARN: auroraPostgres.secretArn,
-        DB_AURORA_CLUSTER_ARN: auroraPostgres.clusterArn,
-        DATABASE_NAME: auroraPostgres.databaseName,
-      }
+      environment,
     })
 
     const defaultHandler = new lambda.Function(this, 'DefaultHandler', {
@@ -55,15 +61,12 @@ export class ScheduleManagerStack extends Stack {
       code: lambda.Code.fromAsset('lambda'),
       handler: 'db.seed',
       timeout: Duration.minutes(1),
-      environment: {
-        DB_SECRETS_STORE_ARN: auroraPostgres.secretArn,
-        DB_AURORA_CLUSTER_ARN: auroraPostgres.clusterArn,
-        DATABASE_NAME: auroraPostgres.databaseName,
-      }
+      environment,
     })
 
     auroraPostgres.grantDataAPIAccess(createUserSchedule);
     auroraPostgres.grantDataAPIAccess(databaseSeed);
+    auroraPostgres.grantDataAPIAccess(getUserSchedule);
 
     const apiGateway = new apigw.LambdaRestApi(this, 'Endpoint', {
       handler: defaultHandler,

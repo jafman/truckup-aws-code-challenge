@@ -1,13 +1,10 @@
 const { Helper } = require('./helper');
-const { createSchedule } = require('./db');
+const { createSchedule, getSchedules } = require('./db');
+
+const userId = '2e2d69d4-b11f-4162-9aaf-dece541bccd7';
 
 exports.getUserSchedule = async function (event) {
-  console.log('request:', );
-  return {
-    statusCode: 200,
-    headers: { 'Content-Type': 'text/plain' },
-    body: `Hello! You've hit ${event.path}\n ${JSON.stringify(event, undefined, 2)}`
-  };
+  return await getSchedules(userId);
 }
 
 exports.defaultHandler = async function (event) {
@@ -20,8 +17,6 @@ exports.defaultHandler = async function (event) {
 }
 
 exports.createSchedule = async function (event) {
-  const userId = '2e2d69d4-b11f-4162-9aaf-dece541bccd7';
-  
   // Parse the request body
   let body;
   try {
@@ -63,3 +58,4 @@ exports.createSchedule = async function (event) {
   //   body: JSON.stringify(body),
   // }
 }
+
