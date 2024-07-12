@@ -1,3 +1,6 @@
+const SDK = require('aws-sdk');
+const SQS = new SDK.SQS();
+
 const { Helper } = require('./helper');
 const { 
   createSchedule,
@@ -55,17 +58,6 @@ exports.createSchedule = async function (event) {
   if (!isValid) {
     return Helper.badRequestError(message);
   }
-  // if (!Helper.validateTime(body.start_time)) {
-  //   return Helper.badRequestError('Invalid time format for start time, example of time stamp: 12:01 PM, 01:00 AM etc');
-  // }
-
-  // if (!Helper.validateTime(body.end_time)) {
-  //   return Helper.badRequestError('Invalid time format for end time, example of time stamp: 12:01 PM, 01:00 AM etc');
-  // }
-  
-  // if(!Helper.validateTimeRange(body.start_time, body.end_time)) {
-  //   return Helper.badRequestError('Invalid date range, start_time should be less than end_time');
-  // }
 
   // check for overlap
   let overlapFound = false;
@@ -130,6 +122,9 @@ exports.updateSchedule = async function (event) {
     return Helper.badRequestError(`Invalid time range, update will introduce an overlap, between ${overlap.start_time} and ${overlap.end_time}`);
   }
   await updateSchedule(body.start_time, body.end_time, body.id);
+  const queueUrl = process.env.QUEUE_URL;
+  console.log('UPDATE: Sending message to queue...')
+  await sendMessageToQueue({ ...body, userId }, queueUrl);
   return {
     statusCode: 200,
     body: JSON.stringify({message: 'update operation successful'}),
@@ -161,3 +156,27 @@ exports.deleteSchedule = async function (event) {
   }
 }
 
+async function sendMessageToQueue(message, queueUrl) {
+  try {
+    message = JSON.stringify(message);
+    var params = {
+      DelaySeconds: 1,
+      MessageAttributes: {
+        Title: {
+          DataType: 'String',
+          StringValue: 'Message from mutation request',
+        },
+        Author: {
+          DataType: 'String',
+          StringValue: 'Jafar',
+        },
+      },
+      MessageBody: message,
+      QueueUrl: queueUrl,
+    };
+    await SQS.sendMessage(params).promise();
+    console.log('Message Sent Successfully to queue.')
+  } catch(error) {
+    console.log("Error", error);
+  }
+}
