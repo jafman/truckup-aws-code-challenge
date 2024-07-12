@@ -16,11 +16,11 @@ class Helper {
   }
 
   static timeToMinutes(time) {
-    var tokens = time.split(' ');
-    var timeTokens = tokens[0].split(':');
-    var hours = parseInt(timeTokens[0]);
-    var minutes = parseInt(timeTokens[1]);
-    var period = tokens[1];
+    let tokens = time.split(' ');
+    let timeTokens = tokens[0].split(':');
+    let hours = parseInt(timeTokens[0]);
+    let minutes = parseInt(timeTokens[1]);
+    let period = tokens[1];
     
     if (period === 'PM' && hours !== 12) {
         hours += 12;
@@ -31,8 +31,8 @@ class Helper {
   }
 
   static validateTimeRange(startTime, endTime) {
-    var startMinutes = this.timeToMinutes(startTime);
-    var endMinutes = this.timeToMinutes(endTime);
+    let startMinutes = this.timeToMinutes(startTime);
+    let endMinutes = this.timeToMinutes(endTime);
     return startMinutes < endMinutes;
   }
 
@@ -80,6 +80,24 @@ class Helper {
       isValid: true,
       message: ''
     }
+  }
+
+  static isUserOnline(scheduleData, searchTime) {
+    let searchTimeMinutes = this.timeToMinutes(searchTime);
+    for (let i = 0; i < scheduleData.length; i++) {
+      const startTime = scheduleData[i].start_time;
+      const endTime = scheduleData[i].end_time;
+
+      // Convert start_time and end_time to minutes from midnight
+      const startTimeMinutes = this.timeToMinutes(startTime);
+      const endTimeMinutes = this.timeToMinutes(endTime);
+
+      // Check if searchTime falls between startTime and endTime
+      if (searchTimeMinutes >= startTimeMinutes && searchTimeMinutes <= endTimeMinutes) {
+          return true; // User is online during this time slot
+      }
+    }
+    return false; // User is not online at the searchTime
   }
 }
 

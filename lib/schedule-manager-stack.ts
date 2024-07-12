@@ -81,6 +81,14 @@ export class ScheduleManagerStack extends Stack {
       environment,
     })
 
+    const getUserStatus = new lambda.Function(this, 'GetUserStatusHandler', {
+      runtime: this.lambdaRuntime,
+      code: lambda.Code.fromAsset('lambda'),
+      handler: 'shedule-manager.getUserStatus',
+      timeout: Duration.minutes(3),
+      environment,
+    })
+
     const defaultHandler = new lambda.Function(this, 'DefaultHandler', {
       runtime: this.lambdaRuntime,
       code: lambda.Code.fromAsset('lambda'),
@@ -112,6 +120,7 @@ export class ScheduleManagerStack extends Stack {
     auroraPostgres.grantDataAPIAccess(getUserSchedule);
     auroraPostgres.grantDataAPIAccess(updateSchedule);
     auroraPostgres.grantDataAPIAccess(deleteSchedule);
+    auroraPostgres.grantDataAPIAccess(getUserStatus);
 
     const apiGateway = new apigw.LambdaRestApi(this, 'Endpoint', {
       handler: defaultHandler,
@@ -130,6 +139,9 @@ export class ScheduleManagerStack extends Stack {
     user.addMethod('POST', new apigw.LambdaIntegration(createUserSchedule));
     user.addMethod('PATCH', new apigw.LambdaIntegration(updateSchedule));
     user.addMethod('DELETE', new apigw.LambdaIntegration(deleteSchedule));
+
+    const status = user.addResource('status');
+    status.addMethod('GET', new apigw.LambdaIntegration(getUserStatus));
 
     queue.grantConsumeMessages(s3Handler);
     queue.grantSendMessages(updateSchedule);

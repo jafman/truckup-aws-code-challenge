@@ -18,6 +18,31 @@ exports.getUserSchedule = async function (event) {
   return await getSchedules(userId);
 }
 
+exports.getUserStatus = async function (event) {
+  let { queryStringParameters: { day, time } } = event;
+  if (!day || !time) {
+    return Helper.badRequestError('provide day and time');
+  }
+
+  if (!Helper.validateDay(day)) {
+    return Helper.badRequestError('Invalid day format, example of day is monday, tuesday etc');
+  }
+  time = time.replaceAll('%20', '').toUpperCase().replace('PM', ' PM').replace('AM', ' AM');
+
+  if (!Helper.validateTime(time)) {
+    return Helper.badRequestError('Invalid time stamp');
+  }
+
+  const schedule = await getScheduleByDay(userId, day);
+
+  const status = Helper.isUserOnline(schedule, time) ? 'Online' : 'Offline';
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ userId, time, day, status })
+  };
+}
+
 exports.defaultHandler = async function (event) {
   console.log('request:', );
   return {
